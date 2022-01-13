@@ -1,35 +1,33 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   mymini.c                                           :+:      :+:    :+:   */
+/*   er3.c                                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: obouadel <obouadel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/01/08 19:20:33 by obouadel          #+#    #+#             */
-/*   Updated: 2022/01/08 23:44:39 by obouadel         ###   ########.fr       */
+/*   Created: 2022/01/14 03:48:04 by marvin            #+#    #+#             */
+/*   Updated: 2022/01/14 03:48:04 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <math.h>
-#include <string.h>
 
-int height;
-int width;
-char background;
-char **arr;
+int	width = 0;
+int	height = 0;
+char background = 0;
+char **zone = NULL;
 
-typedef struct s_paint
+typedef struct s_rect
 {
-    char 	type;
-    float	x;
-    float	y;
-    float	width;
-    float	height;
-    char	c;
-} t_paint;
+	char	type;
+	char	c;
+	float		width;
+	float		height;
+	float		x;
+	float		y;
+}			t_rect;
 
 int	ft_strlen(char *str)
 {
@@ -38,87 +36,89 @@ int	ft_strlen(char *str)
 		i++;
 	return (i);
 }
-
 int	draw(FILE *file)
 {
-	int i = 0;
-	while (i < height)
-    {
-        write(1, arr[i++], width);
-        write(1,"\n",1);
-    }
-    if (file)
-        fclose(file);
+	int	i = -1;
+	while (++i < height)
+	{
+		write(1, zone[i], width);
+		write(1, "\n", 1);
+	}
+	if (file)
+		fclose(file);
 	return (0);
 }
 
-int	end_program(char *err, int error, FILE *file)
+int	valid_rect(t_rect rect)
 {
-	if (error == 1)
-	{
-		write(1, err, ft_strlen(err));
-		return (1);	
-	}
-	if (error == 2)
-		write(1, err, ft_strlen(err));
-	if (file)
-		fclose(file);
-	return (1);
+	if (rect.height > 0 && rect.width > 0 && (rect.type == 'R' ||rect.type == 'r'))
+		return (1);
+	return (0);
 }
 
-int check_line(t_paint rect)
+int	in_rect(t_rect rect, float x, float y)
 {
-	if (rect.type != 'r' && rect.type != 'R')
+	if (rect.x > x || rect.x + rect.width < x || rect.y > y || rect.y + rect.height < y)
 		return (0);
-	if (rect.height <= 0 || rect.width <= 0)
-		return (0);
+		//(xw - x < 1 || 1 > x + w - xw|| yh - y < 1 || 1 > y + h - yh)
+	// if (x - rect.x < 1.000 ||1.000 > rect.x + rect.width - x || y - rect.y < 1.000 || 1.000 > rect.y + rect.height - y)
+	if (1.00 > x - rect.x || 1.00 > rect.x + rect.width - x || 1.00 > y - rect.y || 1.000 > rect.y + rect.height - y)
+		return (2);
 	return (1);
 }
-
-int main(int ac, char **av)
+int	main(int ac, char **av)
 {
+	int	ret = 0;
+	int	init = 0;
+	int i = 0;
+	int	j = 0;
 	FILE	*file = NULL;
-	int		i = 0;
-	int		get = 0;
-	int		row = 0;
-	int		col = 0;
-	t_paint rect;
-	
+	t_rect	rect;
 	if (ac != 2)
-		return (end_program("Error: argument", 1, file));
-	if (file = fopen(av[1], "r"))
-	{	
-		if ((get = fscanf(file, "%d %d %c\n", &width, &height, &background)) == 3)
+	{
+		write(1, "Error: argument\n", 16);
+		return (1);
+	}
+	file = fopen(av[1], "r");
+	if (file)
+	{
+		if ((ret = fscanf(file, "%d %d %c", &width, &height, &background)) == 3)
 		{
-			if (width > 0 && width <= 300 && height > 0 && height <= 300)
+			if (width > 0 && width <= 300 && height > 0 && height <= 300) 
 			{
-				arr = malloc(height * sizeof(char *));
+				zone = malloc(height * sizeof(char *));
 				while (i < height)
 				{
-					arr[i] = malloc(width * sizeof(char));
-					memset(arr[i], background, width);
+					zone[i] = malloc(width * sizeof(char));
+					memset(zone[i], background, width);
 					i++;
 				}
-				while (1)
+				while (1337)
 				{
-					get = fscanf(file, "%c %f %f %f %f %c", &rect.type, &rect.x , &rect.y, &rect.width, &rect.height, &rect.c);
-					if (get == -1)
+					ret = fscanf(file, "\n%c %f %f %f %f %c", &rect.type, &rect.x, &rect.y, &rect.height, &rect.width, &rect.c);
+					if (ret != 6 || !valid_rect(rect))
 						return (draw(file));
-					if (!check_line(rect) || get != 6)
-						break ;
-					while (row < height)
+					i = 0;
+					while (i < height)
 					{
-						while (col < width)
+						j = 0;
+						while (j < width)
 						{
-							
-							col++;
+							init = in_rect(rect, j, i);
+							if (rect.type == 'r' && init == 2)
+								zone[i][j] = rect.c;
+							if (rect.type == 'R' && init)
+								zone[i][j] = rect.c;
+							j++;
 						}
-						row++;
+						i++;
 					}
 				}
 			}
-
 		}
 	}
-	return (end_program("Error: Operation file corrupted", 2, file));
+	if (file)
+		fclose(file);
+	write (1, "Error: Operation file corrupted\n", 32);
+	return (1);
 }
